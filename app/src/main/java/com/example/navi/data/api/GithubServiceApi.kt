@@ -8,8 +8,12 @@ import retrofit2.http.Query
 
 interface GithubServiceApi {
     @GET("repos/{owner}/{repo}/pulls")
-    suspend fun getPullResquest(@Path("owner") owner: String, @Path("repo") repo: String, @Query("state") state: String = "open"): List<PullRequest>
+    suspend fun getPullResquest(@Path("owner") owner: String,
+                                @Path("repo") repo: String,
+                                @Query("state") state: String = "open",
+                                @Query("page") page: Int = 1): List<PullRequest>
 
     @GET("search/repositories")
-    suspend fun queryRepoList(@Query("q") query: String): RepoSearchResponse
+    suspend fun queryRepoList(@Query("q") query: String,
+                              @Query("page") page: Int = 1): RepoSearchResponse
 }

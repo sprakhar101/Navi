@@ -11,22 +11,24 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentResultListener
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.*
+import androidx.paging.LoadState
+import androidx.paging.PagingData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.navi.R
 import com.example.navi.data.model.PullRequest
 import com.example.navi.data.model.PullRequestState
-import com.example.navi.ui.adapter.PullRequestAdapter
+import com.example.navi.ui.adapter.PullRequestPagingAdapter
 import com.example.navi.ui.viewmodel.GithubViewModel
-import com.example.navi.utils.ResponseStatus
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class PullRequestFragment: Fragment() {
 
     private lateinit var cardsViewModel: GithubViewModel
     private lateinit var recyclerView: RecyclerView
-    private lateinit var adapter: PullRequestAdapter
+    private lateinit var adapter: PullRequestPagingAdapter
     private lateinit var retryButton: Button
     private lateinit var searchView: View
     private lateinit var titleView: TextView
@@ -35,7 +37,7 @@ class PullRequestFragment: Fragment() {
     private var currState = PullRequestState.CLOSED
     private var currentOwner = "google"
     private var currentRepo = "ExoPlayer"
-    private val prList = arrayListOf<PullRequest>()
+    private var prList = PagingData.empty<PullRequest>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,21 +78,39 @@ class PullRequestFragment: Fragment() {
 
     private fun initRecylcerView() {
         val layoutManager = LinearLayoutManager(activity)
-        adapter = PullRequestAdapter(prList)
+        adapter = PullRequestPagingAdapter()
         recyclerView.layoutManager = layoutManager
         recyclerView.adapter = adapter
+        if(prList != PagingData.empty<PullRequest>()) {
+            adapter.submitData(lifecycle, prList)
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                adapter.loadStateFlow.collectLatest { loadStates ->
+                    when (loadStates.refresh) {
+                        is LoadState.Loading -> {
+                            handleLoading()
+                        }
+                        is LoadState.NotLoading -> {
+                            handlSuccess()
+                        }
+                        is LoadState.Error -> {
+                            handleError()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun initViewModel() {
         cardsViewModel = ViewModelProvider(requireActivity())[GithubViewModel::class.java]
-        if(prList.isNullOrEmpty()) queryPullRequest()
+        Log.d("NaviAssgn", "initViewModel: $currentRepo")
+        if(prList == PagingData.empty<PullRequest>()) queryPullRequest()
     }
 
-    private fun updatePrList(cards: List<PullRequest>) { //TODO
-        prList.clear()
-        prList.addAll(cards)
-        adapter.clearAndUpdate(cards)
-        adapter.notifyDataSetChanged()
+    private fun showEmptyList() {
+        adapter.submitData(lifecycle, PagingData.empty())
     }
 
     private fun handleLoading() {
@@ -106,6 +126,7 @@ class PullRequestFragment: Fragment() {
     }
 
     private fun handleError() {
+        Toast.makeText(activity, "Error! Connect to Internet", Toast.LENGTH_SHORT).show()
         recyclerView.visibility = View.GONE
         retryButton.visibility = View.VISIBLE
         progressBar.visibility = View.GONE
@@ -114,9 +135,7 @@ class PullRequestFragment: Fragment() {
     private fun initFragmentResultListner() {
         val fragmentManager = parentFragmentManager
         fragmentManager.setFragmentResultListener("searchForRepo", this, FragmentResultListener { requestKey, result ->
-            Log.d("NaviAssgn", "initFragmentResultListner: Result revceived in pr fragment${result.getString("owner")} ${result.getString("repo")} ${result.getString("state")}")
-            onSelectedNewQuery(result)
-//            Toast.makeText(activity, "Result ${result.getString("owner")} ${result.getString("repo")} ${result.getString("state")}", Toast.LENGTH_SHORT).show()
+            if(requestKey == "searchForRepo") onSelectedNewQuery(result)
         })
     }
 
@@ -126,22 +145,8 @@ class PullRequestFragment: Fragment() {
 
     private fun queryPullRequest() {
         cardsViewModel.getPullResquest(currentOwner, currentRepo, currState).observe(viewLifecycleOwner, Observer {
-            when(it.status) {
-                ResponseStatus.LOADING -> {
-                    handleLoading()
-                }
-                ResponseStatus.SUCCESS -> {
-                    handlSuccess()
-                    it.data?.let { prs ->
-                        updatePrList(prs)
-                    }
-                }
-                ResponseStatus.FAILURE -> {
-                    handleError()
-                    Log.d("NaviAssgn", "queryPullRequest: ${it.message}")
-                    Toast.makeText(activity, "Error! Connect to Internet", Toast.LENGTH_SHORT).show()
-                }
-            }
+            adapter.submitData(lifecycle, it)
+            prList = it
         })
     }
 
@@ -153,7 +158,7 @@ class PullRequestFragment: Fragment() {
             currentRepo = newRepo
             currentOwner = newOwner
             currState = newState
-            updatePrList(emptyList())
+            showEmptyList()
             updateTitle()
             queryPullRequest()
         }

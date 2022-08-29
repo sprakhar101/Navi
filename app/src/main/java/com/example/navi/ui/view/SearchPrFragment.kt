@@ -11,22 +11,22 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.*
+import androidx.paging.LoadState
+import androidx.paging.PagingData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.navi.R
-import com.example.navi.data.model.PullRequest
-import com.example.navi.data.model.RepoItem
-import com.example.navi.ui.adapter.SearchRepoAdapter
+import com.example.navi.ui.adapter.SearchRepoPagingAdapter
 import com.example.navi.ui.viewmodel.GithubViewModel
-import com.example.navi.utils.ResponseStatus
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
-class SearchPrFragment: Fragment(), SearchRepoAdapter.ItemClickListner {
+class SearchPrFragment: Fragment(), SearchRepoPagingAdapter.ItemClickListner {
 
     private lateinit var cardsViewModel: GithubViewModel
     private lateinit var recyclerView: RecyclerView
-    private lateinit var adapter: SearchRepoAdapter
+    private lateinit var adapter: SearchRepoPagingAdapter
     private lateinit var retryButton: Button
     private lateinit var searchView: EditText
     private lateinit var stateSpinner: Spinner
@@ -54,7 +54,7 @@ class SearchPrFragment: Fragment(), SearchRepoAdapter.ItemClickListner {
                 handler.removeCallbacks(searchRunnable)
                 handler.postDelayed(searchRunnable, 500)
             }
-            else updatePrList(emptyList())
+            else showEmptyList()
         }
 
         initRecyclerView()
@@ -69,9 +69,26 @@ class SearchPrFragment: Fragment(), SearchRepoAdapter.ItemClickListner {
 
     private fun initRecyclerView() {
         val layoutManager = LinearLayoutManager(activity)
-        adapter = SearchRepoAdapter(this)
+        adapter = SearchRepoPagingAdapter(this)
         recyclerView.layoutManager = layoutManager
         recyclerView.adapter = adapter
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                adapter.loadStateFlow.collectLatest { loadStates ->
+                    when (loadStates.refresh) {
+                        is LoadState.Loading -> {
+                            handleLoading()
+                        }
+                        is LoadState.NotLoading -> {
+                            handlSuccess()
+                        }
+                        is LoadState.Error -> {
+                            handleError()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun initViewModel() {
@@ -84,28 +101,14 @@ class SearchPrFragment: Fragment(), SearchRepoAdapter.ItemClickListner {
                 handler.removeCallbacks(searchRunnable)
                 handler.postDelayed(searchRunnable, 500)
             }
-            else updatePrList(emptyList())
+            else showEmptyList()
         }
     }
 
     private fun querySearch(query: String) {
         Log.d("NaviAssgn", "querySearch: $query")
         cardsViewModel.queryRepoList(query).observe(viewLifecycleOwner, Observer {
-            when(it.status) {
-                ResponseStatus.LOADING -> {
-                    handleLoading()
-                }
-                ResponseStatus.SUCCESS -> {
-                    handlSuccess()
-                    it.data?.let { response ->
-                        updatePrList(response.items)
-                    }
-                }
-                ResponseStatus.FAILURE -> {
-                    handleError()
-                    Toast.makeText(activity, "Error! Connect to Internet", Toast.LENGTH_SHORT).show()
-                }
-            }
+            adapter.submitData(lifecycle, it)
         })
     }
 
@@ -127,9 +130,8 @@ class SearchPrFragment: Fragment(), SearchRepoAdapter.ItemClickListner {
         fragmentManager.popBackStack()
     }
 
-    private fun updatePrList(repoList: List<RepoItem>) { //TODO
-        adapter.clearAndUpdate(repoList)
-        adapter.notifyDataSetChanged()
+    private fun showEmptyList() { //TODO
+        adapter.submitData(lifecycle, PagingData.empty())
     }
 
     private fun handleLoading() {
@@ -145,6 +147,7 @@ class SearchPrFragment: Fragment(), SearchRepoAdapter.ItemClickListner {
     }
 
     private fun handleError() {
+        Toast.makeText(activity, "Error! Connect to Internet", Toast.LENGTH_SHORT).show()
         recyclerView.visibility = View.GONE
         retryButton.visibility = View.VISIBLE
         progressBar.visibility = View.GONE

@@ -7,11 +7,11 @@ import com.example.navi.data.model.RepoSearchResponse
 class GithubApiHelper {
     private val githubServiceApi = GithubApiClient.getClientInstace()
 
-    suspend fun getPullRequests(owner: String, repo: String, state: PullRequestState): List<PullRequest> {
-        return githubServiceApi.getPullResquest(owner, repo, state.state)
+    suspend fun getPullRequests(owner: String, repo: String, state: PullRequestState, pageIndex: Int = 0): List<PullRequest> {
+        return githubServiceApi.getPullResquest(owner, repo, state.state, pageIndex)
     }
 
-    suspend fun queryRepoList(query: String): RepoSearchResponse {
-        return githubServiceApi.queryRepoList(query)
+    suspend fun queryRepoList(query: String, padeIndex: Int = 0): RepoSearchResponse {
+        return githubServiceApi.queryRepoList(query, padeIndex)
     }
 }
