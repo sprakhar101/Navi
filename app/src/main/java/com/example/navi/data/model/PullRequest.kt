@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class PullRequest (
 	@SerializedName("url") val url : String,
-	@SerializedName("id") val id : Int,
+	@SerializedName("id") val id : String,
 	@SerializedName("node_id") val node_id : String,
 	@SerializedName("html_url") val html_url : String,
 	@SerializedName("diff_url") val diff_url : String,

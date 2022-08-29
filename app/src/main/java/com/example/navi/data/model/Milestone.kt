@@ -6,7 +6,7 @@ data class Milestone (
 	@SerializedName("url") val url : String,
 	@SerializedName("html_url") val html_url : String,
 	@SerializedName("labels_url") val labels_url : String,
-	@SerializedName("id") val id : Int,
+	@SerializedName("id") val id : String,
 	@SerializedName("node_id") val node_id : String,
 	@SerializedName("number") val number : Int,
 	@SerializedName("state") val state : String,
