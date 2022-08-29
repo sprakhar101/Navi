@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_marginHorizontal="16dp"
+    android:paddingHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    android:paddingVertical="8dp"
+    android:background="@drawable/bg_pr_list_item"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/pr_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Pull Request Title"/>
+
+    <LinearLayout
+        android:id="@+id/ll_user"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="5dp"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/pr_title">
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="2dp">
+            <ImageView
+                android:id="@+id/user_avatar"
+                android:layout_width="32dp"
+                android:layout_height="32dp"/>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/user_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="user 123"/>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            android:textStyle="italic"
+            android:textAlignment="viewEnd"
+            tools:text="closed"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="5dp"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/ll_user">
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/date_created"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="11sp"
+            android:gravity="left"
+            tools:text="created: 12/12/12"/>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/date_updated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="11sp"
+            android:gravity="center"
+            tools:text="updated: 12/12/12"/>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/date_closed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="11sp"
+            android:gravity="right"
+            tools:text="closed: 12/12/12"/>
+
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
