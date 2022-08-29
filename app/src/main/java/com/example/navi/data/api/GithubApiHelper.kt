@@ -1,19 +1,17 @@
 package com.example.navi.data.api
 
 import com.example.navi.data.model.PullRequest
+import com.example.navi.data.model.PullRequestState
+import com.example.navi.data.model.RepoSearchResponse
 
 class GithubApiHelper {
     private val githubServiceApi = GithubApiClient.getClientInstace()
 
-    suspend fun getOpenPullRequests(owner: String, repo: String): List<PullRequest> {
-        return githubServiceApi.getPullResquest(owner, repo, "open")
+    suspend fun getPullRequests(owner: String, repo: String, state: PullRequestState): List<PullRequest> {
+        return githubServiceApi.getPullResquest(owner, repo, state.state)
     }
 
-    suspend fun getClosedPullRequests(owner: String, repo: String): List<PullRequest> {
-        return githubServiceApi.getPullResquest(owner, repo, "closed")
-    }
-
-    suspend fun getAllPullRequests(owner: String, repo: String): List<PullRequest> {
-        return githubServiceApi.getPullResquest(owner, repo, "all")
+    suspend fun queryRepoList(query: String): RepoSearchResponse {
+        return githubServiceApi.queryRepoList(query)
     }
 }
